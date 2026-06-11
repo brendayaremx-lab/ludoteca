@@ -89,9 +89,14 @@ if (document.getElementById('contenedor-tarjetas')) {
             };
         }
 
+<<<<<<< HEAD
         const baseUrl = document.querySelector('meta[name="asset-base"]')?.content ?? '';
         const imagenHTML = juego.imagen
             ? `<img src="${baseUrl}/img/${juego.imagen}" alt="${juego.nombre}">`
+=======
+        const imagenHTML = juego.imagen
+            ? `<img src="/img/${juego.imagen}" alt="${juego.nombre}">`
+>>>>>>> 64f9c9466bacb1c823f459513cee514e23e1d80f
             : `<div class="sin-imagen">Sin imagen</div>`;
 
         card.innerHTML = `
@@ -102,10 +107,15 @@ if (document.getElementById('contenedor-tarjetas')) {
             <p>Jugadores: ${juego.numero_jugadores}</p>
 
             ${form ? `
+<<<<<<< HEAD
                 <div class="botones">
                     <button class="btn-editar" onclick="editarJuego(${juego.id})">Editar</button>
                     <button class="btn-eliminar" onclick="eliminarJuego(${juego.id})">Eliminar</button>
                 </div>
+=======
+                <button onclick="editarJuego(${juego.id})">Editar</button>
+                <button onclick="eliminarJuego(${juego.id})">Eliminar</button>
+>>>>>>> 64f9c9466bacb1c823f459513cee514e23e1d80f
             ` : ''}
         `;
 
