@@ -59,45 +59,115 @@ if (document.getElementById('contenedor-tarjetas')) {
         });
     }
 
-    function mostrarJuegos() {
-        contenedor.innerHTML = '';
-        if (contador) contador.textContent = `Juegos en catalogo: ${juegos.length}`;
+    function mostrarJuegos(lista = juegos, busquedaActiva = false) {
+    contenedor.innerHTML = '';
 
-        if (juegos.length === 0) {
-            contenedor.innerHTML = "<p style='text-align:center;color:#999;width:100%;padding:40px 0;'>No hay juegos todavia.</p>";
-            return;
+    if (contador) {
+        contador.textContent = busquedaActiva
+            ? `Resultados encontrados: ${lista.length}`
+            : `Juegos en catálogo: ${juegos.length}`;
+    }
+
+    if (lista.length === 0) {
+        contenedor.innerHTML = `
+            <div class="text-center text-muted p-4">
+                ${busquedaActiva ? 'No se encontraron coincidencias.' : 'No hay juegos todavía.'}
+            </div>
+        `;
+        return;
+    }
+
+    lista.forEach((juego) => {
+        const estaSeleccionado = seleccionados.includes(juego.id);
+
+        const card = document.createElement('div');
+        card.className = 'tarjeta' + (estaSeleccionado ? ' seleccionado' : '');
+
+        if (document.getElementById('boton-prestamo')) {
+            card.onclick = function (e) {
+                if (e.target.tagName !== 'BUTTON') seleccionar(juego.id);
+            };
         }
 
-        juegos.forEach((juego) => {
-            const estaSeleccionado = seleccionados.includes(juego.id);
-            const card = document.createElement('div');
-            card.className = 'tarjeta' + (estaSeleccionado ? ' seleccionado' : '');
+        const baseUrl = document.querySelector('meta[name="asset-base"]')?.content ?? '';
+        const imagenHTML = juego.imagen
+            ? `<img src="${baseUrl}/img/${juego.imagen}" alt="${juego.nombre}">`
+            : `<div class="sin-imagen">Sin imagen</div>`;
 
-            if (document.getElementById('boton-prestamo')) {
-                card.onclick = function (e) {
-                    if (e.target.tagName !== 'BUTTON') seleccionar(juego.id);
-                };
+        card.innerHTML = `
+            ${imagenHTML}
+            <h3>${juego.nombre}</h3>
+            <p>Dificultad: ${juego.dificultad}</p>
+            <p>Edad: ${juego.edad_recomendada}</p>
+            <p>Jugadores: ${juego.numero_jugadores}</p>
+
+            ${form ? `
+                <div class="botones">
+                    <button class="btn-editar" onclick="editarJuego(${juego.id})">Editar</button>
+                    <button class="btn-eliminar" onclick="eliminarJuego(${juego.id})">Eliminar</button>
+                </div>
+            ` : ''}
+        `;
+
+        contenedor.appendChild(card);
+    });
+}
+
+function buscarJuegos() {
+    const buscador = document.getElementById('buscador');
+    const mensajeBusqueda = document.getElementById('mensaje-busqueda');
+
+    if (!buscador) return;
+
+    const texto = buscador.value.trim().toLowerCase();
+
+    if (mensajeBusqueda) {
+        mensajeBusqueda.innerText = '';
+    }
+
+    if (texto.length < 3) {
+        if (mensajeBusqueda) {
+            mensajeBusqueda.innerText = 'Escribe al menos 3 caracteres para buscar.';
+        }
+
+        mostrarJuegos();
+        return;
+    }
+
+    const resultados = juegos.filter(juego =>
+        juego.nombre.toLowerCase().includes(texto)
+    );
+
+    mostrarJuegos(resultados, true);
+}
+
+const btnBuscar = document.getElementById('btn-buscar');
+const buscador = document.getElementById('buscador');
+
+if (btnBuscar) {
+    btnBuscar.addEventListener('click', buscarJuegos);
+}
+
+if (buscador) {
+    buscador.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarJuegos();
+        }
+    });
+
+    buscador.addEventListener('input', function() {
+        if (buscador.value.trim() === '') {
+            const mensajeBusqueda = document.getElementById('mensaje-busqueda');
+
+            if (mensajeBusqueda) {
+                mensajeBusqueda.innerText = '';
             }
 
-            const imagenHTML = juego.imagen
-                ? `<img src="img/${juego.imagen}" onerror="this.style.display='none';this.nextSibling.style.display='flex';">
-                   <div class="sin-imagen" style="display:none;">Sin imagen</div>`
-                : `<div class="sin-imagen">Sin imagen</div>`;
-
-            card.innerHTML = `
-                ${imagenHTML}
-                <h3>${juego.nombre}</h3>
-                <p>Dificultad: ${juego.dificultad}</p>
-                <p>Edad: ${juego.edad_recomendada}</p>
-                <p>Jugadores: ${juego.numero_jugadores}</p>
-                <div class="botones" style="${!form ? 'display:none;' : ''}">
-                    <button class="btn-editar" onclick="event.stopPropagation(); editarJuego(${juego.id})">Editar</button>
-                    <button class="btn-eliminar" onclick="event.stopPropagation(); eliminarJuego(${juego.id})">Eliminar</button>
-                </div>
-            `;
-            contenedor.appendChild(card);
-        });
-    }
+            mostrarJuegos();
+        }
+    });
+}
 
     window.eliminarJuego = function(id) {
         if(confirm("¿Eliminar este juego?")) {
@@ -225,7 +295,6 @@ if (document.getElementById('confirmationCode')) {
 }
 
 if (document.getElementById('contenedorSolicitudes')) {
-
     function cargarSolicitudes() {
         fetch('/api/admin/solicitudes')
             .then(res => res.json())
@@ -233,43 +302,84 @@ if (document.getElementById('contenedorSolicitudes')) {
                 const contenedor = document.getElementById('contenedorSolicitudes');
                 const contador = document.getElementById('contadorSolicitudes');
 
-                const pendientes = prestamos.filter(p => p.estado === 'Pendiente');
-                if(contador) contador.innerText = pendientes.length;
+                // Mostramos pendientes y entregadas.
+                // Las entregadas son las que pueden marcarse como devueltas.
+                const solicitudesVisibles = prestamos.filter(p =>
+                    p.estado === 'Pendiente' || p.estado === 'Entregado'
+                );
 
-                if (pendientes.length === 0) {
-                    contenedor.innerHTML = '<div class="p-5 text-center text-muted">No hay solicitudes pendientes.</div>';
+                if (contador) contador.innerText = solicitudesVisibles.length;
+
+                if (solicitudesVisibles.length === 0) {
+                    contenedor.innerHTML = '<div class="p-5 text-center text-muted">No hay solicitudes pendientes o entregadas.</div>';
                     return;
                 }
 
                 contenedor.innerHTML = '';
 
-                pendientes.forEach(sol => {
+                solicitudesVisibles.forEach(sol => {
                     let juegosTexto = "";
+
                     try {
                         juegosTexto = JSON.parse(sol.juegos).join(', ');
-                    } catch(e) {
+                    } catch (e) {
                         juegosTexto = sol.juegos;
                     }
 
                     const item = document.createElement('div');
                     item.className = 'list-group-item bg-white p-4 border-bottom';
+
+                    let botones = '';
+
+                    if (sol.estado === 'Pendiente') {
+                        botones = `
+                            <button class="btn btn-outline-danger rounded-pill px-4"
+                                onclick="gestionarSolicitud(${sol.id}, 'Cancelado')">
+                                Rechazar
+                            </button>
+
+                            <button class="btn btn-success rounded-pill px-4"
+                                onclick="gestionarSolicitud(${sol.id}, 'Entregado')">
+                                Aprobar
+                            </button>
+                        `;
+                    }
+
+                    if (sol.estado === 'Entregado') {
+                        botones = `
+                            <button class="btn btn-outline-primary rounded-pill px-4"
+                                onclick="gestionarSolicitud(${sol.id}, 'Devuelto')">
+                                Juego Devuelto
+                            </button>
+                        `;
+                    }
+
                     item.innerHTML = `
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <div>
-                                    <h6 class="fw-bold mb-1">${sol.nombre_cliente} <small class="text-primary border rounded px-1 ms-1">${sol.codigo_confirmacion}</small></h6>
+                                    <h6 class="fw-bold mb-1">
+                                        ${sol.nombre_cliente}
+                                        <small class="text-primary border rounded px-1 ms-1">
+                                            ${sol.codigo_confirmacion}
+                                        </small>
+                                    </h6>
+
                                     <p class="mb-1 text-dark small fw-medium">${juegosTexto}</p>
+
                                     <div class="text-muted small">
                                         <span>${sol.numero_personas} Personas</span>
+                                        <span class="ms-2 badge bg-light text-dark border">${sol.estado}</span>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-md-4 d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
-                                <button class="btn btn-outline-danger rounded-pill px-4" onclick="gestionarSolicitud(${sol.id}, 'Rechazada')">Rechazar</button>
-                                <button class="btn btn-success rounded-pill px-4" onclick="gestionarSolicitud(${sol.id}, 'Aprobada')">Aprobar</button>
+                                ${botones}
                             </div>
                         </div>
                     `;
+
                     contenedor.appendChild(item);
                 });
             });
@@ -277,13 +387,20 @@ if (document.getElementById('contenedorSolicitudes')) {
 
     cargarSolicitudes();
 
+    const mensajesConfirm = {
+        'Entregado': '¿Aprobar esta solicitud y marcarla como entregada?',
+        'Cancelado': '¿Rechazar esta solicitud?',
+        'Devuelto':  '¿Confirmar que el juego fue devuelto?'
+    };
+
     window.gestionarSolicitud = function(id, accion) {
-        if (confirm(`¿Desea marcar la solicitud como ${accion}?`)) {
+        const mensaje = mensajesConfirm[accion] ?? `¿Desea marcar la solicitud como ${accion}?`;
+        if (confirm(mensaje)) {
             fetch(`/api/admin/solicitudes/${id}/estado`, {
                 method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Accept': 'application/json' 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ estado: accion })
             })
