@@ -22,14 +22,14 @@
     <h1>Catálogo de Juegos</h1>
 
     <div class="filtros">
-        <input type="text" id="buscador" placeholder="Buscar juego..." oninput="filtrar()">
-        <select id="filtro-dificultad" onchange="filtrar()">
-            <option value="">Dificultad</option>
-            <option value="Facil">Fácil</option>
-            <option value="Medio">Media</option>
-            <option value="Dificil">Difícil</option>
-        </select>
-    </div>
+    <input type="text" id="buscador" placeholder="Buscar juego...">
+
+    <button type="button" id="btn-buscar">
+        Buscar
+    </button>
+</div>
+
+<div id="mensaje-busqueda"></div>
 
     <p id="mensaje-seleccion">Seleccionados: 0 / 3</p>
     <button id="boton-prestamo" onclick="irAPrestamo()">Solicitar prestamo →</button>

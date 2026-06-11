@@ -85,6 +85,8 @@ h1 {
 .filtros {
   text-align: center;
   margin-bottom: 16px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .filtros input {
@@ -350,3 +352,45 @@ h1 {
   background-color: #cc0000;
   color: white;
 }
+
+
+
+/* ################################## */
+
+/* Botones de navegación superior */
+.navbar a,
+.navbar .nav-link,
+header a,
+nav a {
+    background-color: #ffffff;
+    color: #4b0082 !important;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 0 6px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efecto al pasar el mouse */
+.navbar a:hover,
+.navbar .nav-link:hover,
+header a:hover,
+nav a:hover {
+    background-color: #ffd700;
+    color: #2d0050 !important;
+    border-color: #ffd700;
+    transform: translateY(-1px);
+}
+
+/* Botón activo o página actual, si existe */
+.navbar a.active,
+.navbar .nav-link.active,
+header a.active,
+nav a.active {
+    background-color: #ffd700;
+    color: #2d0050 !important;
+    border-color: #ffd700;
+}
+
